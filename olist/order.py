@@ -73,3 +73,12 @@ class Order:
         order_items = self.data['order_items'].copy()
 
         return order_items.groupby('order_id', as_index=False).agg(number_of_sellers=('seller_id', 'nunique'))
+
+    def get_price_and_freight(self):
+        """
+        Returns a DataFrame with:
+        order_id, price, freight_value
+        """
+        order_items = self.data['order_items'].copy()
+
+        return order_items.groupby('order_id', as_index=False).agg({'price': 'sum', 'freight_value': 'sum'})
