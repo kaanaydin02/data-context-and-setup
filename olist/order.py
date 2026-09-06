@@ -55,3 +55,12 @@ class Order:
         reviews['dim_is_one_star'] = reviews['review_score'].apply(lambda x: 1 if x == 1 else 0)
 
         return reviews[['order_id', 'dim_is_five_star', 'dim_is_one_star', 'review_score']]
+
+    def get_number_items(self):
+        """
+        Returns a DataFrame with:
+        order_id, number_of_items
+        """
+        order_items = self.data['order_items'].copy()
+
+        return order_items.groupby('order_id', as_index=False).agg(number_of_items=('order_item_id', 'count'))
