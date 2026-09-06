@@ -43,3 +43,15 @@ class Order:
         orders['delay_vs_expected'] = orders['delay_vs_expected'].apply(lambda x: max(x, 0))
 
         return orders[['order_id', 'wait_time', 'expected_wait_time', 'delay_vs_expected', 'order_status']]
+
+    def get_review_score(self):
+        """
+        Returns a DataFrame with:
+        order_id, dim_is_five_star, dim_is_one_star, review_score
+        """
+        reviews = self.data['order_reviews'].copy()
+
+        reviews['dim_is_five_star'] = reviews['review_score'].apply(lambda x: 1 if x == 5 else 0)
+        reviews['dim_is_one_star'] = reviews['review_score'].apply(lambda x: 1 if x == 1 else 0)
+
+        return reviews[['order_id', 'dim_is_five_star', 'dim_is_one_star', 'review_score']]
