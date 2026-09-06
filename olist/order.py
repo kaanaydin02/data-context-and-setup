@@ -64,3 +64,12 @@ class Order:
         order_items = self.data['order_items'].copy()
 
         return order_items.groupby('order_id', as_index=False).agg(number_of_items=('order_item_id', 'count'))
+
+    def get_number_sellers(self):
+        """
+        Returns a DataFrame with:
+        order_id, number_of_sellers
+        """
+        order_items = self.data['order_items'].copy()
+
+        return order_items.groupby('order_id', as_index=False).agg(number_of_sellers=('seller_id', 'nunique'))
