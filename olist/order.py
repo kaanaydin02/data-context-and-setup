@@ -103,3 +103,46 @@ class Order:
             training_set = training_set.merge(self.get_distance_seller_customer(), on='order_id')
 
         return training_set.dropna()
+
+    def get_distance_seller_customer(self):
+        """
+        Returns a DataFrame with:
+        order_id, distance_seller_customer
+        """
+        from olist.utils import haversine_distance
+
+        orders = self.data['orders']
+        order_items = self.data['order_items']
+        sellers = self.data['sellers']
+        customers = self.data['customers']
+        geo = self.data['geolocation']
+
+        geo = geo.groupby('geolocation_zip_code_prefix', as_index=False).first()
+
+        sellers_geo = sellers.merge(
+            geo, left_on='seller_zip_code_prefix', right_on='geolocation_zip_code_prefix'
+        )
+        customers_geo = customers.merge(
+            geo, left_on='customer_zip_code_prefix', right_on='geolocation_zip_code_prefix'
+        )
+
+        matching = order_items[['order_id', 'seller_id']].merge(
+            orders[['order_id', 'customer_id']], on='order_id'
+        )
+        matching = matching.merge(
+            sellers_geo[['seller_id', 'geolocation_lat', 'geolocation_lng']], on='seller_id'
+        )
+        matching = matching.merge(
+            customers_geo[['customer_id', 'geolocation_lat', 'geolocation_lng']],
+            on='customer_id',
+            suffixes=('_seller', '_customer'),
+        )
+
+        matching['distance_seller_customer'] = haversine_distance(
+            matching['geolocation_lng_seller'],
+            matching['geolocation_lat_seller'],
+            matching['geolocation_lng_customer'],
+            matching['geolocation_lat_customer'],
+        )
+
+        return matching.groupby('order_id', as_index=False)['distance_seller_customer'].mean()
