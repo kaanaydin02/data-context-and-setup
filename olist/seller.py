@@ -142,7 +142,24 @@ class Seller:
         'seller_id', 'share_of_five_stars', 'share_of_one_stars', 'review_score'
         """
 
-        pass  # YOUR CODE HERE
+        order_items = self.data['order_items'].copy()
+        order_reviews = self.data['order_reviews'].copy()
+
+        matching = order_items[['order_id', 'seller_id']].merge(
+            order_reviews[['order_id', 'review_score']], on='order_id'
+        )
+
+        matching['is_five_star'] = matching['review_score'] == 5
+        matching['is_one_star'] = matching['review_score'] == 1
+
+        result_df = matching.groupby('seller_id', as_index=False).agg({
+            'is_five_star': 'mean',
+            'is_one_star': 'mean',
+            'review_score': 'mean'
+        })
+        result_df.columns = ['seller_id', 'share_of_five_stars', 'share_of_one_stars', 'review_score']
+
+        return result_df
 
     def get_training_data(self):
         """
