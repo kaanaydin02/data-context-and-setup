@@ -139,7 +139,7 @@ class Seller:
     def get_review_score(self):
         """
         Returns a DataFrame with:
-        'seller_id', 'share_of_five_stars', 'share_of_one_stars', 'review_score'
+        'seller_id', 'share_of_five_stars', 'share_of_one_stars', 'review_score', 'cost_of_reviews'
         """
 
         order_items = self.data['order_items'].copy()
@@ -149,15 +149,19 @@ class Seller:
             order_reviews[['order_id', 'review_score']], on='order_id'
         )
 
+        cost_of_review = {1: 100, 2: 50, 3: 40, 4: 0, 5: 0}
+        matching['cost_of_review'] = matching['review_score'].map(cost_of_review)
+
         matching['is_five_star'] = matching['review_score'] == 5
         matching['is_one_star'] = matching['review_score'] == 1
 
         result_df = matching.groupby('seller_id', as_index=False).agg({
             'is_five_star': 'mean',
             'is_one_star': 'mean',
-            'review_score': 'mean'
+            'review_score': 'mean',
+            'cost_of_review': 'sum'
         })
-        result_df.columns = ['seller_id', 'share_of_five_stars', 'share_of_one_stars', 'review_score']
+        result_df.columns = ['seller_id', 'share_of_five_stars', 'share_of_one_stars', 'review_score', 'cost_of_reviews']
 
         return result_df
 
@@ -185,5 +189,14 @@ class Seller:
         if self.get_review_score() is not None:
             training_set = training_set.merge(self.get_review_score(),
                                               on='seller_id')
+
+        training_set['revenues'] = (
+            80 * training_set['months_on_olist']
+            + 0.10 * training_set['sales']
+        )
+
+        training_set['profits'] = (
+            training_set['revenues'] - training_set['cost_of_reviews']
+        )
 
         return training_set
